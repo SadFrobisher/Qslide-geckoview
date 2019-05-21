@@ -3,6 +3,7 @@ package com.jw.studio.geckofloatingview;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.PersistableBundle;
+import android.support.constraint.ConstraintLayout;
 import android.util.Log;
 
 import org.mozilla.geckoview.GeckoRuntime;
@@ -45,6 +46,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -64,9 +66,9 @@ import java.util.LinkedList;
 import java.util.Locale;
 import com.lge.app.floating.*;
 
-    public class GeckoViewActivity extends FloatableActivity {
+    public class GeckoViewActivity extends AppCompatActivity {
         private static final String LOGTAG = "GeckoViewActivity";
-        private static final String DEFAULT_URL = "http://m.naver.com";
+        private static final String DEFAULT_URL = "about:config";
         private static final String USE_MULTIPROCESS_EXTRA = "use_multiprocess";
         private static final String FULL_ACCESSIBILITY_TREE_EXTRA = "full_accessibility_tree";
         private static final String SEARCH_URI_BASE = "https://www.google.com/search?q=";
@@ -82,14 +84,12 @@ import com.lge.app.floating.*;
         private boolean mFullAccessibilityTree;
         private boolean mUseTrackingProtection;
         private boolean mUsePrivateBrowsing;
-        private boolean mEnableRemoteDebugging;
         private boolean mKillProcessOnDestroy;
 
         private boolean mShowNotificationsRejected;
         private ArrayList<String> mAcceptedPersistentStorage = new ArrayList<String>();
 
         private EditText etAddress;
-        private LocationView mLocationView;
         private String mCurrentUri;
         private boolean mCanGoBack;
         private boolean mCanGoForward;
@@ -97,6 +97,7 @@ import com.lge.app.floating.*;
 
         private ProgressBar mProgressView;
         private ImageButton qslideButton;
+        private ImageButton wvBackButton;
 
         private LinkedList<GeckoSession.WebResponseInfo> mPendingDownloads = new LinkedList<>();
 
@@ -107,21 +108,20 @@ import com.lge.app.floating.*;
                     " - application start");
 
             setContentView(R.layout.activity_main);
-            mGeckoView = (GeckoView) findViewById(R.id.gecko_view);
+
+            mGeckoView =  findViewById(R.id.gecko_view);
             etAddress = findViewById(R.id.etAddress);
             //setSupportActionBar((Toolbar)findViewById(R.id.toolbar));
+            ConstraintLayout bottomBar = findViewById(R.id.bottombar);
 
-            mLocationView = new LocationView(this);
-            mLocationView.setId(R.id.url_bar);
 //            getSupportActionBar().setCustomView(mLocationView,
 //                    new ActionBar.LayoutParams(ActionBar.LayoutParams.MATCH_PARENT,
 //                            ActionBar.LayoutParams.WRAP_CONTENT));
             //getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
 
             mUseMultiprocess = getIntent().getBooleanExtra(USE_MULTIPROCESS_EXTRA, true);
-            mEnableRemoteDebugging = true;
             mFullAccessibilityTree = getIntent().getBooleanExtra(FULL_ACCESSIBILITY_TREE_EXTRA, false);
-            mProgressView = (ProgressBar) findViewById(R.id.page_progress);
+            mProgressView = findViewById(R.id.page_progress);
 
             if (sGeckoRuntime == null) {
                 final GeckoRuntimeSettings.Builder runtimeSettingsBuilder =
@@ -139,7 +139,6 @@ import com.lge.app.floating.*;
                 }
                 runtimeSettingsBuilder
                         .useContentProcessHint(mUseMultiprocess)
-                        .remoteDebuggingEnabled(mEnableRemoteDebugging)
                         .consoleOutput(true)
                         .contentBlocking(new ContentBlocking.Settings.Builder()
                                 .categories(ContentBlocking.AT_DEFAULT)
@@ -170,7 +169,22 @@ import com.lge.app.floating.*;
                 }
             }
 
-            mLocationView.setCommitListener(mCommitListener);
+            etAddress.setOnKeyListener(new View.OnKeyListener() {
+                @Override
+                public boolean onKey(View v, int keyCode, KeyEvent event) {
+                    if((keyCode == KeyEvent.KEYCODE_ENTER) ) {
+                        String url = etAddress.getText().toString();
+                        if(url.contains("://") || url.contains("m.")|| url.contains("www.")){
+                            mGeckoSession.loadUri(url);
+                        }else{
+                            mGeckoSession.loadUri(SEARCH_URI_BASE + url);
+                        }
+                        mGeckoView.requestFocus();
+                        //return true;
+                    }
+                    return false;
+                }
+            });
         }
 
         private GeckoSession createSession() {
@@ -204,7 +218,7 @@ import com.lge.app.floating.*;
 
             session.setSelectionActionDelegate(new BasicSelectionActionDelegate(this));
 
-            //updateTrackingProtection(session);
+            updateTrackingProtection(session);
         }
 
         private void recreateSession() {
@@ -228,9 +242,9 @@ import com.lge.app.floating.*;
             }
         }
 
-//        private void updateTrackingProtection(GeckoSession session) {
-//            session.getSettings().setUseTrackingProtection(mUseTrackingProtection);
-//        }
+        private void updateTrackingProtection(GeckoSession session) {
+            session.getSettings().setUseTrackingProtection(mUseTrackingProtection);
+        }
 
         @Override
         public void onBackPressed() {
@@ -259,7 +273,6 @@ import com.lge.app.floating.*;
             menu.findItem(R.id.action_e10s).setChecked(mUseMultiprocess);
             menu.findItem(R.id.action_tp).setChecked(mUseTrackingProtection);
             menu.findItem(R.id.action_pb).setChecked(mUsePrivateBrowsing);
-            menu.findItem(R.id.action_remote_debugging).setChecked(mEnableRemoteDebugging);
             menu.findItem(R.id.action_forward).setEnabled(mCanGoForward);
             return true;
         }
@@ -287,8 +300,6 @@ import com.lge.app.floating.*;
                     recreateSession();
                     break;
                 case R.id.action_remote_debugging:
-                    mEnableRemoteDebugging = !mEnableRemoteDebugging;
-                    sGeckoRuntime.getSettings().setRemoteDebuggingEnabled(mEnableRemoteDebugging);
                     break;
                 default:
                     return super.onOptionsItemSelected(item);
@@ -777,7 +788,7 @@ import com.lge.app.floating.*;
         private class ExampleNavigationDelegate implements GeckoSession.NavigationDelegate {
             @Override
             public void onLocationChange(GeckoSession session, final String url) {
-                mLocationView.setText(url);
+                etAddress.setText(url);
                 mCurrentUri = url;
             }
 
@@ -921,7 +932,7 @@ import com.lge.app.floating.*;
                             try {
                                 stream.close();
                             } catch (IOException e) {
-                                Log.e(LOGTAG, "Failed to close error page template stream", e);
+                                Log.d(LOGTAG, "Failed to close error page template stream", e);
                             }
                         }
 
@@ -929,7 +940,7 @@ import com.lge.app.floating.*;
                             try {
                                 reader.close();
                             } catch (IOException e) {
-                                Log.e(LOGTAG, "Failed to close error page template reader", e);
+                                Log.d(LOGTAG, "Failed to close error page template reader", e);
                             }
                         }
                     }
