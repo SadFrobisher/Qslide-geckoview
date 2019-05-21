@@ -50,6 +50,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 
 import java.io.BufferedReader;
@@ -86,6 +88,7 @@ import com.lge.app.floating.*;
         private boolean mShowNotificationsRejected;
         private ArrayList<String> mAcceptedPersistentStorage = new ArrayList<String>();
 
+        private EditText etAddress;
         private LocationView mLocationView;
         private String mCurrentUri;
         private boolean mCanGoBack;
@@ -93,20 +96,9 @@ import com.lge.app.floating.*;
         private boolean mFullScreen;
 
         private ProgressBar mProgressView;
+        private ImageButton qslideButton;
 
         private LinkedList<GeckoSession.WebResponseInfo> mPendingDownloads = new LinkedList<>();
-
-        private LocationView.CommitListener mCommitListener = new LocationView.CommitListener() {
-            @Override
-            public void onCommit(String text) {
-                if ((text.contains(".") || text.contains(":")) && !text.contains(" ")) {
-                    mGeckoSession.loadUri(text);
-                } else {
-                    mGeckoSession.loadUri(SEARCH_URI_BASE + text);
-                }
-                mGeckoView.requestFocus();
-            }
-        };
 
         @Override
         protected void onCreate(Bundle savedInstanceState) {
@@ -116,7 +108,7 @@ import com.lge.app.floating.*;
 
             setContentView(R.layout.activity_main);
             mGeckoView = (GeckoView) findViewById(R.id.gecko_view);
-
+            etAddress = findViewById(R.id.etAddress);
             //setSupportActionBar((Toolbar)findViewById(R.id.toolbar));
 
             mLocationView = new LocationView(this);
@@ -212,7 +204,7 @@ import com.lge.app.floating.*;
 
             session.setSelectionActionDelegate(new BasicSelectionActionDelegate(this));
 
-            updateTrackingProtection(session);
+            //updateTrackingProtection(session);
         }
 
         private void recreateSession() {
@@ -236,9 +228,9 @@ import com.lge.app.floating.*;
             }
         }
 
-        private void updateTrackingProtection(GeckoSession session) {
-            session.getSettings().setUseTrackingProtection(mUseTrackingProtection);
-        }
+//        private void updateTrackingProtection(GeckoSession session) {
+//            session.getSettings().setUseTrackingProtection(mUseTrackingProtection);
+//        }
 
         @Override
         public void onBackPressed() {
@@ -287,7 +279,7 @@ import com.lge.app.floating.*;
                     break;
                 case R.id.action_tp:
                     mUseTrackingProtection = !mUseTrackingProtection;
-                    updateTrackingProtection(mGeckoSession);
+                    //updateTrackingProtection(mGeckoSession);
                     mGeckoSession.reload();
                     break;
                 case R.id.action_pb:
