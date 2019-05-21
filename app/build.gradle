@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     packagingOptions {
-    exclude 'META-INF/*'
+    //exclude 'META-INF/*'
     }
     compileSdkVersion 28
     defaultConfig {

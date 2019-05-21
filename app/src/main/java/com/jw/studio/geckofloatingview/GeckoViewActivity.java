@@ -60,8 +60,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Locale;
+import com.lge.app.floating.*;
 
-    public class GeckoViewActivity extends AppCompatActivity {
+    public class GeckoViewActivity extends FloatableActivity {
         private static final String LOGTAG = "GeckoViewActivity";
         private static final String DEFAULT_URL = "http://m.naver.com";
         private static final String USE_MULTIPROCESS_EXTRA = "use_multiprocess";
@@ -116,14 +117,14 @@ import java.util.Locale;
             setContentView(R.layout.activity_main);
             mGeckoView = (GeckoView) findViewById(R.id.gecko_view);
 
-            setSupportActionBar((Toolbar)findViewById(R.id.toolbar));
+            //setSupportActionBar((Toolbar)findViewById(R.id.toolbar));
 
             mLocationView = new LocationView(this);
             mLocationView.setId(R.id.url_bar);
-            getSupportActionBar().setCustomView(mLocationView,
-                    new ActionBar.LayoutParams(ActionBar.LayoutParams.MATCH_PARENT,
-                            ActionBar.LayoutParams.WRAP_CONTENT));
-            getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
+//            getSupportActionBar().setCustomView(mLocationView,
+//                    new ActionBar.LayoutParams(ActionBar.LayoutParams.MATCH_PARENT,
+//                            ActionBar.LayoutParams.WRAP_CONTENT));
+            //getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
 
             mUseMultiprocess = getIntent().getBooleanExtra(USE_MULTIPROCESS_EXTRA, true);
             mEnableRemoteDebugging = true;
@@ -467,7 +468,7 @@ import java.util.Locale;
             @Override
             public GeckoResult<Boolean> onVisited(GeckoSession session, String url,
                                                   String lastVisitedURL, int flags) {
-                Log.i(LOGTAG, "Visited URL: " + url);
+                Log.d(LOGTAG, "Visited URL: " + url);
 
                 mVisitedURLs.add(url);
                 return GeckoResult.fromValue(true);
@@ -485,14 +486,14 @@ import java.util.Locale;
             @Override
             public void onHistoryStateChange(final GeckoSession session,
                                              final GeckoSession.HistoryDelegate.HistoryList state) {
-                Log.i(LOGTAG, "History state updated");
+                Log.d(LOGTAG, "History state updated");
             }
         }
 
         private class ExampleContentDelegate implements GeckoSession.ContentDelegate {
             @Override
             public void onTitleChange(GeckoSession session, String title) {
-                Log.i(LOGTAG, "Content title changed to " + title);
+                Log.d(LOGTAG, "Content title changed to " + title);
             }
 
             @Override
@@ -501,16 +502,16 @@ import java.util.Locale;
                         WindowManager.LayoutParams.FLAG_FULLSCREEN);
                 mFullScreen = fullScreen;
                 if (fullScreen) {
-                    getSupportActionBar().hide();
+                    //getSupportActionBar().hide();
                 } else {
-                    getSupportActionBar().show();
+                    //getSupportActionBar().show();
                 }
             }
 
-            @Override
-            public void onFocusRequest(final GeckoSession session) {
-                Log.i(LOGTAG, "Content requesting focus");
-            }
+//            @Override
+//            public void onFocusRequest(final GeckoSession session) {
+//                Log.d(LOGTAG, "Content requesting focus");
+//            }
 
             @Override
             public void onCloseRequest(final GeckoSession session) {
@@ -570,23 +571,23 @@ import java.util.Locale;
 
             @Override
             public void onPageStart(GeckoSession session, String url) {
-                Log.i(LOGTAG, "Starting to load page at " + url);
-                Log.i(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() +
+                Log.d(LOGTAG, "Starting to load page at " + url);
+                Log.d(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() +
                         " - page load start");
                 mCb.clearCounters();
             }
 
             @Override
             public void onPageStop(GeckoSession session, boolean success) {
-                Log.i(LOGTAG, "Stopping page load " + (success ? "successfully" : "unsuccessfully"));
-                Log.i(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() +
+                Log.d(LOGTAG, "Stopping page load " + (success ? "successfully" : "unsuccessfully"));
+                Log.d(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() +
                         " - page load stop");
                 mCb.logCounters();
             }
 
             @Override
             public void onProgressChange(GeckoSession session, int progress) {
-                Log.i(LOGTAG, "onProgressChange " + progress);
+                Log.d(LOGTAG, "onProgressChange " + progress);
 
                 mProgressView.setProgress(progress);
 
@@ -599,12 +600,12 @@ import java.util.Locale;
 
             @Override
             public void onSecurityChange(GeckoSession session, SecurityInformation securityInfo) {
-                Log.i(LOGTAG, "Security status changed to " + securityInfo.securityMode);
+                Log.d(LOGTAG, "Security status changed to " + securityInfo.securityMode);
             }
 
             @Override
             public void onSessionStateChange(GeckoSession session, GeckoSession.SessionState state) {
-                Log.i(LOGTAG, "New Session state: " + state.toString());
+                Log.d(LOGTAG, "New Session state: " + state.toString());
             }
         }
 
