@@ -1,6 +1,7 @@
 package com.jw.studio.geckofloatingview;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.support.constraint.ConstraintLayout;
@@ -50,6 +51,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
@@ -66,9 +68,9 @@ import java.util.LinkedList;
 import java.util.Locale;
 import com.lge.app.floating.*;
 
-    public class GeckoViewActivity extends AppCompatActivity {
+    public class GeckoViewActivity extends FloatableActivity {
         private static final String LOGTAG = "GeckoViewActivity";
-        private static final String DEFAULT_URL = "about:config";
+        private static final String DEFAULT_URL = "https://m.cafe.naver.com";
         private static final String USE_MULTIPROCESS_EXTRA = "use_multiprocess";
         private static final String FULL_ACCESSIBILITY_TREE_EXTRA = "full_accessibility_tree";
         private static final String SEARCH_URI_BASE = "https://www.google.com/search?q=";
@@ -112,7 +114,9 @@ import com.lge.app.floating.*;
             mGeckoView =  findViewById(R.id.gecko_view);
             etAddress = findViewById(R.id.etAddress);
             //setSupportActionBar((Toolbar)findViewById(R.id.toolbar));
-            ConstraintLayout bottomBar = findViewById(R.id.bottombar);
+            //ConstraintLayout bottomBar = findViewById(R.id.bottombar);
+            qslideButton = findViewById(R.id.button_qslide);
+
 
 //            getSupportActionBar().setCustomView(mLocationView,
 //                    new ActionBar.LayoutParams(ActionBar.LayoutParams.MATCH_PARENT,
@@ -185,6 +189,7 @@ import com.lge.app.floating.*;
                     return false;
                 }
             });
+            qslideButton.setOnTouchListener(qListener);
         }
 
         private GeckoSession createSession() {
@@ -580,36 +585,101 @@ import com.lge.app.floating.*;
                 mCb.clearCounters();
             }
 
+        View.OnTouchListener qListener = new View.OnTouchListener() {
             @Override
-            public void onPageStop(GeckoSession session, boolean success) {
-                Log.d(LOGTAG, "Stopping page load " + (success ? "successfully" : "unsuccessfully"));
-                Log.d(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() +
-                        " - page load stop");
-                mCb.logCounters();
-            }
+            public boolean onTouch(View v, MotionEvent event) {
+                boolean floatingmode = isInFloatingMode();  		// test if application is in floating window mode
 
-            @Override
-            public void onProgressChange(GeckoSession session, int progress) {
-                Log.d(LOGTAG, "onProgressChange " + progress);
+                if (event.getAction() == MotionEvent.ACTION_DOWN ) {
+                    //qslideButton.setBackgroundResource(R.drawable.back_pressed); // setting dingy background for the button when pressed
 
-                mProgressView.setProgress(progress);
+                    if(floatingmode) {
+                        //qslideButton.setImageResource(R.drawable.floating_btn_fullscreen_normal); // if in floating mode then change button image
+                    } else {
+                        //qslideButton.setImageResource(R.drawable.ic_menu_floating_app_pressed);  // else normal image for full screen mode
+                    }
+                    return true;
+                } else if (event.getAction() == MotionEvent.ACTION_UP) {
+                    //qslideButton.setBackgroundResource(R.drawable.);  // setting normal background for the button when released
+                    if(floatingmode) {
+                        // close the floating window and return to full screen mode (true parameter)
+                        getFloatingWindow().close(true);
+                    } else {
+//                    boolean useOverlay = true;//mUseOverlayCheckbox.isChecked();
+//                    boolean useOverlappingTitle = true;//mUseOverlappingTitleCheckbox.isChecked();
+//                    boolean isResizable = true;//mIsResizableCheckbox.isChecked();
 
-                if (progress > 0 && progress < 100) {
-                    mProgressView.setVisibility(View.VISIBLE);
-                } else {
-                    mProgressView.setVisibility(View.GONE);
+                        //switchToFloatingMode(useOverlay, useOverlappingTitle, isResizable, null);
+                        setDontFinishOnFloatingMode(true);
+                        switchToFloatingMode();
+
+                    }
+                    return true;
                 }
+                return false;
             }
+        };
 
-            @Override
-            public void onSecurityChange(GeckoSession session, SecurityInformation securityInfo) {
-                Log.d(LOGTAG, "Security status changed to " + securityInfo.securityMode);
-            }
+        // This is called when the floating window becomes visible to the user.
+        @Override
+        public void onAttachedToFloatingWindow(FloatingWindow w) {
+            Log.d("WindowFlow","onAttachedToFloatingWindow.");
+            /* all resources should be reinitialized once again
+             * if you set new layout for the floating mode setContentViewForFloatingMode()*/
+            Context mContext = w.getContentView().getContext();
+            //browserHolder.qslideButton = (ImageButton)findViewById(R.id.button_qslide);
+            //mContext = this.getFloatingWindow().getContentView().getContext();
+            //View view = this.getWindow().getDecorView();
+            //view.getFocusable();
+            //if (sGeckoRuntime == null) {
+            //mGeckoSession = mGeckoView.getSession();
+            //view.findViewById(R.id.webViewMain).setFocusable(true);
+            sGeckoRuntime.attachTo(mContext);
+            // and also listeners a should be added once again to the buttons in floating mode
+            qslideButton.setOnTouchListener(qListener);
 
-            @Override
-            public void onSessionStateChange(GeckoSession session, GeckoSession.SessionState state) {
-                Log.d(LOGTAG, "New Session state: " + state.toString());
+            w.setSize(700,1200);
+            //mWebView.getTextClassifier();
+
+
+
+//        w.setOnUpdateListener(new FloatingWindow.DefaultOnUpdateListener() {
+//
+//            @Override
+//            public void onResizeFinished(FloatingWindow window, int width,
+//                                         int height) {
+//                DisplayMetrics disp = getApplicationContext().getResources().getDisplayMetrics();
+//                int deviceWidth = disp.widthPixels;
+//                int deviceHeight = disp.heightPixels;
+//
+//                //resizedWidthRatio = (float) width / deviceWidth;
+//                //((WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getWidth();
+//                //mLunarView.setResizeRatio(resizedWidthRatio);
+//            }
+//        });
+            // set an onUpdateListener to limit the width of the floating window
+
+
+
+        }
+        // This is called when the floating window is closed.
+        @Override
+        public boolean onDetachedFromFloatingWindow(FloatingWindow w, boolean isReturningToFullScreen) {
+            Log.d("WindowFlow","onDetachedFromFloatingWindow. Returning to Fullscreen: " + isReturningToFullScreen);
+
+//        //set the last position of the floating window when the window is closing
+//        Intent intent = getIntent();
+//        intent.putExtra("posX", w.getLayoutParams().x);
+//        intent.putExtra("posY", w.getLayoutParams().y);
+
+            return true;
+        }
+        @Override
+        public void switchToFloatingMode() {
+            if (onStartedAsFloatingMode()) {
+                //setDontFinishOnFloatingMode(true);
             }
+            super.switchToFloatingMode();
         }
 
         private class ExamplePermissionDelegate implements GeckoSession.PermissionDelegate {
