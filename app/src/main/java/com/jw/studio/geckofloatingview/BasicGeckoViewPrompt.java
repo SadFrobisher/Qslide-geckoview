@@ -3,6 +3,7 @@ package com.jw.studio.geckofloatingview;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.Context;
@@ -11,8 +12,10 @@ import android.content.Intent;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.text.InputType;
 import android.text.format.DateFormat;
 import android.util.Log;
@@ -20,14 +23,16 @@ import android.view.InflateException;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CheckedTextView;
 import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
-import android.widget.FrameLayout;
+
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -60,87 +65,82 @@ final public class BasicGeckoViewPrompt implements  GeckoSession.PromptDelegate{
         mActivity = activity;
     }
 
-    private AlertDialog.Builder addCheckbox(final AlertDialog.Builder builder,
-                                            ViewGroup parent,
-                                            final AlertCallback callback) {
-        if (!callback.hasCheckbox()) {
-            return builder;
-        }
-        final CheckBox checkbox = new CheckBox(builder.getContext());
-        if (callback.getCheckboxMessage() != null) {
-            checkbox.setText(callback.getCheckboxMessage());
-        }
-        checkbox.setChecked(callback.getCheckboxValue());
-        checkbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(final CompoundButton button,
-                                         final boolean checked) {
-                callback.setCheckboxValue(checked);
-            }
-        });
-        if (parent == null) {
-            final int padding = getViewPadding(builder);
-            parent = new FrameLayout(builder.getContext());
-            parent.setPadding(/* left */ padding, /* top */ 0,
-                    /* right */ padding, /* bottom */ 0);
-            builder.setView(parent);
-        }
-        parent.addView(checkbox);
-        return builder;
-    }
-
-    public void onAlert(final GeckoSession session, final String title, final String msg,
-                        final AlertCallback callback) {
-        final Activity activity = mActivity;
-        if (activity == null) {
-            callback.dismiss();
-            return;
-        }
-        final AlertDialog.Builder builder = new AlertDialog.Builder(activity)
-                .setTitle(title)
-                .setMessage(msg)
-                .setPositiveButton(android.R.string.ok, /* onClickListener */ null);
-        createStandardDialog(addCheckbox(builder, /* parent */ null, callback),
-                callback).show();
-    }
+//        private AlertDialog.Builder addCheckbox(final AlertDialog.Builder builder,
+//                                            ViewGroup parent,
+//                                            final AlertCallback callback) {
+//        if (!callback.hasCheckbox()) {
+//            return builder;
+//        }
+//        final CheckBox checkbox = new CheckBox(builder.getContext());
+//        if (callback.getCheckboxMessage() != null) {
+//            checkbox.setText(callback.getCheckboxMessage());
+//        }
+//        checkbox.setChecked(callback.getCheckboxValue());
+//        checkbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+//            @Override
+//            public void onCheckedChanged(final CompoundButton button,
+//                                         final boolean checked) {
+//                callback.setCheckboxValue(checked);
+//            }
+//        });
+//        if (parent == null) {
+//            final int padding = getViewPadding(builder);
+//            parent = new FrameLayout(builder.getContext());
+//            parent.setPadding(/* left */ padding, /* top */ 0,
+//                    /* right */ padding, /* bottom */ 0);
+//            builder.setView(parent);
+//        }
+//        parent.addView(checkbox);
+//        return builder;
+//    }
 
     public void onButtonPrompt(final GeckoSession session, final String title,
                                final String msg, final String[] btnMsg,
                                final ButtonCallback callback) {
         final Activity activity = mActivity;
-        if (activity == null) {
+        if (mActivity == null) {
             callback.dismiss();
             return;
         }
-        final AlertDialog.Builder builder = new AlertDialog.Builder(activity)
-                .setTitle(title)
-                .setMessage(msg);
-        final DialogInterface.OnClickListener listener =
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(final DialogInterface dialog, final int which) {
-                        if (which == DialogInterface.BUTTON_POSITIVE) {
-                            callback.confirm(BUTTON_TYPE_POSITIVE);
-                        } else if (which == DialogInterface.BUTTON_NEUTRAL) {
-                            callback.confirm(BUTTON_TYPE_NEUTRAL);
-                        } else if (which == DialogInterface.BUTTON_NEGATIVE) {
-                            callback.confirm(BUTTON_TYPE_NEGATIVE);
-                        } else {
-                            callback.dismiss();
-                        }
-                    }
-                };
-        if (btnMsg[BUTTON_TYPE_POSITIVE] != null) {
-            builder.setPositiveButton(btnMsg[BUTTON_TYPE_POSITIVE], listener);
-        }
-        if (btnMsg[BUTTON_TYPE_NEUTRAL] != null) {
-            builder.setNeutralButton(btnMsg[BUTTON_TYPE_NEUTRAL], listener);
-        }
-        if (btnMsg[BUTTON_TYPE_NEGATIVE] != null) {
-            builder.setNegativeButton(btnMsg[BUTTON_TYPE_NEGATIVE], listener);
-        }
-        createStandardDialog(addCheckbox(builder, /* parent */ null, callback),
-                callback).show();
+        Dialog dialog = new Dialog(mActivity);
+        dialog.getWindow().getAttributes().windowAnimations = R.anim.dialogani;
+        dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
+        dialog.setContentView(R.layout.custom_dialog);
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        final TextView tvTitle = dialog.findViewById(R.id.titleAlert);
+        Button btnOK =  dialog.findViewById(R.id.button_ok);
+        Button btnCancel = dialog.findViewById(R.id.button_cancel);
+        tvTitle.setText(msg);
+
+        btnOK.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                callback.confirm(BUTTON_TYPE_NEGATIVE);
+                dialog.dismiss();
+            }
+        });
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                callback.confirm(BUTTON_TYPE_POSITIVE);
+                dialog.dismiss();
+
+            }
+        });
+        dialog.show();
+        dialog.setCancelable(false);
+        //dialog.setCancelable(false);
+//        final Handler handler = new Handler();
+//        handler.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                String a = btnMsg[0];
+//                System.out.println(btnCancel.getText());
+//                //btnCancel.performClick();
+//
+//
+//            }
+//        }, 500 );
     }
 
     private int getViewPadding(final AlertDialog.Builder builder) {
@@ -201,8 +201,8 @@ final public class BasicGeckoViewPrompt implements  GeckoSession.PromptDelegate{
                                 callback.confirm(editText.getText().toString());
                             }
                         });
-
-        createStandardDialog(addCheckbox(builder, container, callback), callback).show();
+        builder.show();
+        //createStandardDialog(addCheckbox(builder, container, callback), callback).show();
     }
 
     public void onAuthPrompt(final GeckoSession session, final String title,
@@ -254,7 +254,9 @@ final public class BasicGeckoViewPrompt implements  GeckoSession.PromptDelegate{
                                 }
                             }
                         });
-        createStandardDialog(addCheckbox(builder, container, callback), callback).show();
+        builder.create();
+        builder.show();
+        //createStandardDialog(addCheckbox(builder, container, callback), callback).show();
     }
 
     private static class ModifiableChoice {
