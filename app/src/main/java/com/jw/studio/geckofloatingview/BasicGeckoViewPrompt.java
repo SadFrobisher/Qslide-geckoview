@@ -426,11 +426,11 @@ final public class BasicGeckoViewPrompt implements  GeckoSession.PromptDelegate{
         addChoiceItems(type, adapter, choices, /* indent */ null);
 
         list.setAdapter(adapter);
-        builder.setView(list);
+        builder.setContentView(list);
 
-        final AlertDialog dialog;
+
         if (type == Choice.CHOICE_TYPE_SINGLE || type == Choice.CHOICE_TYPE_MENU) {
-            dialog = createStandardDialog(builder, callback);
+            //Adialog = createStandardDialog(builder, callback);
             list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(final AdapterView<?> parent, final View v,
@@ -440,15 +440,15 @@ final public class BasicGeckoViewPrompt implements  GeckoSession.PromptDelegate{
                         final Choice[] children = item.choice.items;
                         if (children != null) {
                             // Show sub-menu.
-                            dialog.setOnDismissListener(null);
-                            dialog.dismiss();
+//                            Adialog.setOnDismissListener(null);
+//                            Adialog.dismiss();
                             onChoicePrompt(session, item.modifiableLabel, /* msg */ null,
                                     type, children, callback);
                             return;
                         }
                     }
                     callback.confirm(item.choice);
-                    dialog.dismiss();
+                    builder.dismiss();
                 }
             });
         } else if (type == Choice.CHOICE_TYPE_MULTIPLE) {
@@ -460,28 +460,27 @@ final public class BasicGeckoViewPrompt implements  GeckoSession.PromptDelegate{
                     item.modifiableSelected = ((CheckedTextView) v).isChecked();
                 }
             });
-            builder.setNegativeButton(android.R.string.cancel, /* listener */ null)
-                    .setPositiveButton(android.R.string.ok,
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(final DialogInterface dialog,
-                                                    final int which) {
-                                    final int len = adapter.getCount();
-                                    ArrayList<String> items = new ArrayList<>(len);
-                                    for (int i = 0; i < len; i++) {
-                                        final ModifiableChoice item = adapter.getItem(i);
-                                        if (item.modifiableSelected) {
-                                            items.add(item.choice.id);
-                                        }
-                                    }
-                                    callback.confirm(items.toArray(new String[items.size()]));
-                                }
-                            });
-            dialog = createStandardDialog(builder, callback);
+
+            tvTitle.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    final int len = adapter.getCount();
+                    ArrayList<String> items = new ArrayList<>(len);
+                    for (int i = 0; i < len; i++) {
+                        final ModifiableChoice item = adapter.getItem(i);
+                        if (item.modifiableSelected) {
+                            items.add(item.choice.id);
+                        }
+                    }
+                    callback.confirm(items.toArray(new String[items.size()]));
+                }
+            });
+            createStandardDialog(builder, callback);
         } else {
             throw new UnsupportedOperationException();
         }
-        dialog.show();
+        builder.show();
+
     }
 
     private static int parseColor(final String value, final int def) {
