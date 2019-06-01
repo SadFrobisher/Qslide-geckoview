@@ -15,7 +15,7 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Handler;
+
 import android.text.InputType;
 import android.text.format.DateFormat;
 import android.util.Log;
@@ -27,12 +27,10 @@ import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
+
 import android.widget.CheckedTextView;
-import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
-
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -65,34 +63,31 @@ final public class BasicGeckoViewPrompt implements  GeckoSession.PromptDelegate{
         mActivity = activity;
     }
 
-//        private AlertDialog.Builder addCheckbox(final AlertDialog.Builder builder,
-//                                            ViewGroup parent,
-//                                            final AlertCallback callback) {
-//        if (!callback.hasCheckbox()) {
-//            return builder;
-//        }
-//        final CheckBox checkbox = new CheckBox(builder.getContext());
-//        if (callback.getCheckboxMessage() != null) {
-//            checkbox.setText(callback.getCheckboxMessage());
-//        }
-//        checkbox.setChecked(callback.getCheckboxValue());
-//        checkbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+    private Dialog addCheckbox(final Dialog builder, ViewGroup parent , final  AlertCallback callback){
+        if(!callback.hasCheckbox()){
+            return builder;
+        }
+        //Call when touch more than twice
+        Button btnOK =  builder.findViewById(R.id.button_ok);
+        Button btnCancel = builder.findViewById(R.id.button_cancel);
+        //CheckBox checkBox= builder.findViewById(R.id.checkBox);
+
+        btnOK.setText(R.string.alertmsg_cancel);
+        btnCancel.setText(R.string.alertmsg_ok);
+//        checkBox.setVisibility(View.VISIBLE);
+//
+//        checkBox.setText(callback.getCheckboxMessage());
+//        checkBox.setChecked(callback.getCheckboxValue());
+//        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 //            @Override
 //            public void onCheckedChanged(final CompoundButton button,
 //                                         final boolean checked) {
 //                callback.setCheckboxValue(checked);
 //            }
 //        });
-//        if (parent == null) {
-//            final int padding = getViewPadding(builder);
-//            parent = new FrameLayout(builder.getContext());
-//            parent.setPadding(/* left */ padding, /* top */ 0,
-//                    /* right */ padding, /* bottom */ 0);
-//            builder.setView(parent);
-//        }
-//        parent.addView(checkbox);
-//        return builder;
-//    }
+        return  builder;
+    }
+
 
     public void onButtonPrompt(final GeckoSession session, final String title,
                                final String msg, final String[] btnMsg,
@@ -127,23 +122,21 @@ final public class BasicGeckoViewPrompt implements  GeckoSession.PromptDelegate{
 
             }
         });
-        dialog.show();
+
         dialog.setCancelable(false);
-        //dialog.setCancelable(false);
-//        final Handler handler = new Handler();
-//        handler.postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                String a = btnMsg[0];
-//                System.out.println(btnCancel.getText());
-//                //btnCancel.performClick();
-//
-//
-//            }
-//        }, 500 );
+        createStandardDialog(addCheckbox(dialog, /* parent */ null, callback),
+                callback).show();
+
     }
 
     private int getViewPadding(final AlertDialog.Builder builder) {
+        final TypedArray attr = builder.getContext().obtainStyledAttributes(
+                new int[] { android.R.attr.listPreferredItemPaddingLeft });
+        final int padding = attr.getDimensionPixelSize(0, 1);
+        attr.recycle();
+        return padding;
+    }
+    private int getViewPadding(final Dialog builder) {
         final TypedArray attr = builder.getContext().obtainStyledAttributes(
                 new int[] { android.R.attr.listPreferredItemPaddingLeft });
         final int padding = attr.getDimensionPixelSize(0, 1);
@@ -177,6 +170,16 @@ final public class BasicGeckoViewPrompt implements  GeckoSession.PromptDelegate{
             }
         });
         return dialog;
+    }
+    private Dialog createStandardDialog(final Dialog builder, AlertCallback callback){
+        Dialog dialog = builder;
+        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                callback.dismiss();
+            }
+        });
+        return  dialog;
     }
 
     public void onTextPrompt(final GeckoSession session, final String title,
@@ -310,8 +313,14 @@ final public class BasicGeckoViewPrompt implements  GeckoSession.PromptDelegate{
             callback.dismiss();
             return;
         }
-        final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-        addStandardLayout(builder, title, msg);
+        //final AlertDialog.Builder Abuilder = new AlertDialog.Builder(activity);
+        final Dialog builder = new Dialog(activity);
+        builder.getWindow().getAttributes().windowAnimations = R.anim.dialogani;
+        builder.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
+        builder.setContentView(R.layout.custom_dialog);
+
+        final TextView tvTitle = builder.findViewById(R.id.titleAlert);
+        //addStandardLayout(builder, title, msg);
 
         final ListView list = new ListView(builder.getContext());
         if (type == Choice.CHOICE_TYPE_MULTIPLE) {
@@ -492,7 +501,7 @@ final public class BasicGeckoViewPrompt implements  GeckoSession.PromptDelegate{
             return;
         }
         final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-        addStandardLayout(builder, title, /* msg */ null);
+        //addStandardLayout(builder, title, /* msg */ null);
 
         final int initial = parseColor(value, /* def */ 0);
         final ArrayAdapter<Integer> adapter = new ArrayAdapter<Integer>(
