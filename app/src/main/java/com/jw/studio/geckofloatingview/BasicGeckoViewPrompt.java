@@ -110,23 +110,20 @@ final public class BasicGeckoViewPrompt implements  GeckoSession.PromptDelegate{
         btnOK.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                callback.confirm(BUTTON_TYPE_NEGATIVE);
+                callback.confirm(BUTTON_TYPE_POSITIVE);
                 dialog.dismiss();
             }
         });
         btnCancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                callback.confirm(BUTTON_TYPE_POSITIVE);
+                callback.confirm(BUTTON_TYPE_NEGATIVE);
                 dialog.dismiss();
-
             }
         });
 
         dialog.setCancelable(false);
-        createStandardDialog(addCheckbox(dialog, /* parent */ null, callback),
-                callback).show();
-
+        dialog.show();
     }
 
     private int getViewPadding(final AlertDialog.Builder builder) {
